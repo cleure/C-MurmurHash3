@@ -11,6 +11,12 @@
 #include "MurmurHash3.h"
 
 /*-----------------------------------------------------------------------------
+// Since C89 doesn't support 64-bit integer constants with the LLU suffix, they
+// are computed into static constant variables at runtime when this is defined.
+*/
+#define MURMUR_C89_CONSTANT
+
+/*-----------------------------------------------------------------------------
 // Platform-specific functions and macros
 */
 
@@ -82,12 +88,28 @@ FORCE_INLINE uint32_t fmix_32 ( uint32_t h )
 
 /*----------*/
 
+#ifdef MURMUR_C89_CONSTANT
+  static const uint64_t big_constant1 = (uint64_t)4283543511LU << 32 | (uint64_t)3981806797LU;
+  static const uint64_t big_constant2 = (uint64_t)3301882366LU << 32 | (uint64_t)444984403LU;
+#endif
+
 FORCE_INLINE uint64_t fmix_64 ( uint64_t k )
 {
   k ^= k >> 33;
-  k *= BIG_CONSTANT(0xff51afd7ed558ccd);
+  
+  #ifdef MURMUR_C89_CONSTANT
+    k *= big_constant1;
+  #else
+    k *= BIG_CONSTANT(0xff51afd7ed558ccd);
+  #endif
+  
   k ^= k >> 33;
-  k *= BIG_CONSTANT(0xc4ceb9fe1a85ec53);
+  
+  #ifdef MURMUR_C89_CONSTANT
+    k *= big_constant2;
+  #else
+    k *= BIG_CONSTANT(0xc4ceb9fe1a85ec53);
+  #endif
   k ^= k >> 33;
 
   return k;
@@ -106,6 +128,7 @@ void MurmurHash3_x86_32 ( const void * key, int len,
   const int nblocks = len / 4;
 
   uint32_t h1 = seed;
+  uint32_t k1;
 
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
@@ -115,10 +138,11 @@ void MurmurHash3_x86_32 ( const void * key, int len,
   */
 
   const uint32_t * blocks = (const uint32_t *)(data + nblocks*4);
+  const uint8_t * tail = (const uint8_t*)(data + nblocks*4);
 
   for(i = -nblocks; i; i++)
   {
-    uint32_t k1 = getblock_32(blocks,i);
+    k1 = getblock_32(blocks,i);
 
     k1 *= c1;
     k1 = ROTL32(k1,15);
@@ -133,9 +157,7 @@ void MurmurHash3_x86_32 ( const void * key, int len,
   // tail
   */
 
-  const uint8_t * tail = (const uint8_t*)(data + nblocks*4);
-
-  uint32_t k1 = 0;
+  k1 = 0;
 
   switch(len & 3)
   {
@@ -172,6 +194,11 @@ void MurmurHash3_x86_128 ( const void * key, const int len,
   uint32_t h2 = seed;
   uint32_t h3 = seed;
   uint32_t h4 = seed;
+  
+  uint32_t k1;
+  uint32_t k2;
+  uint32_t k3;
+  uint32_t k4;
 
   const uint32_t c1 = 0x239b961b; 
   const uint32_t c2 = 0xab0e9789;
@@ -183,13 +210,14 @@ void MurmurHash3_x86_128 ( const void * key, const int len,
   */
 
   const uint32_t * blocks = (const uint32_t *)(data + nblocks*16);
+  const uint8_t * tail = (const uint8_t*)(data + nblocks*16);
 
   for(i = -nblocks; i; i++)
   {
-    uint32_t k1 = getblock_32(blocks,i*4+0);
-    uint32_t k2 = getblock_32(blocks,i*4+1);
-    uint32_t k3 = getblock_32(blocks,i*4+2);
-    uint32_t k4 = getblock_32(blocks,i*4+3);
+    k1 = getblock_32(blocks,i*4+0);
+    k2 = getblock_32(blocks,i*4+1);
+    k3 = getblock_32(blocks,i*4+2);
+    k4 = getblock_32(blocks,i*4+3);
 
     k1 *= c1; k1  = ROTL32(k1,15); k1 *= c2; h1 ^= k1;
 
@@ -212,12 +240,10 @@ void MurmurHash3_x86_128 ( const void * key, const int len,
   // tail
   */
 
-  const uint8_t * tail = (const uint8_t*)(data + nblocks*16);
-
-  uint32_t k1 = 0;
-  uint32_t k2 = 0;
-  uint32_t k3 = 0;
-  uint32_t k4 = 0;
+  k1 = 0;
+  k2 = 0;
+  k3 = 0;
+  k4 = 0;
 
   switch(len & 15)
   {
@@ -279,20 +305,28 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
 
   uint64_t h1 = seed;
   uint64_t h2 = seed;
+  uint64_t k1;
+  uint64_t k2;
 
-  const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
-  const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
+  #ifdef MURMUR_C89_CONSTANT
+    static const uint64_t c1 = (uint64_t)2277735313LU << 32 | (uint64_t)289559509LU;
+    static const uint64_t c2 = (uint64_t)1291169091LU << 32 | (uint64_t)658871167LU;
+  #else
+    const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
+    const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
+  #endif
 
   /*----------
   // body
   */
 
   const uint64_t * blocks = (const uint64_t *)(data);
+  const uint8_t * tail = (const uint8_t*)(data + nblocks*16);
 
   for(i = 0; i < nblocks; i++)
   {
-    uint64_t k1 = getblock_64(blocks,i*2+0);
-    uint64_t k2 = getblock_64(blocks,i*2+1);
+    k1 = getblock_64(blocks,i*2+0);
+    k2 = getblock_64(blocks,i*2+1);
 
     k1 *= c1; k1  = ROTL64(k1,31); k1 *= c2; h1 ^= k1;
 
@@ -307,10 +341,8 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
   // tail
   */
 
-  const uint8_t * tail = (const uint8_t*)(data + nblocks*16);
-
-  uint64_t k1 = 0;
-  uint64_t k2 = 0;
+  k1 = 0;
+  k2 = 0;
 
   switch(len & 15)
   {
