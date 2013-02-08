@@ -89,8 +89,8 @@ FORCE_INLINE uint32_t fmix_32 ( uint32_t h )
 /*----------*/
 
 #ifdef MURMUR_C89_CONSTANT
-  static const uint64_t big_constant1 = (uint64_t)4283543511LU << 32 | (uint64_t)3981806797LU;
-  static const uint64_t big_constant2 = (uint64_t)3301882366LU << 32 | (uint64_t)444984403LU;
+  static const uint64_t big_constant1 = (uint64_t)0xff51afd7LU << 32 | (uint64_t)0xed558ccdLU;
+  static const uint64_t big_constant2 = (uint64_t)0xc4ceb9feLU << 32 | (uint64_t)0x1a85ec53LU;
 #endif
 
 FORCE_INLINE uint64_t fmix_64 ( uint64_t k )
@@ -309,8 +309,8 @@ void MurmurHash3_x64_128 ( const void * key, const int len,
   uint64_t k2;
 
   #ifdef MURMUR_C89_CONSTANT
-    static const uint64_t c1 = (uint64_t)2277735313LU << 32 | (uint64_t)289559509LU;
-    static const uint64_t c2 = (uint64_t)1291169091LU << 32 | (uint64_t)658871167LU;
+    static const uint64_t c1 = (uint64_t)0x87c37b91LU << 32 | (uint64_t)0x114253d5LU;
+    static const uint64_t c2 = (uint64_t)0x4cf5ad43LU << 32 | (uint64_t)0x2745937fLU;
   #else
     const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
     const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
